@@ -125,6 +125,7 @@ class MainActivity : ComponentActivity() {
             if (event == Lifecycle.Event.ON_RESUME) {
                 notificationsAllowed = context.getSystemService(NotificationManager::class.java).areNotificationsEnabled()
                 liveActive = LiveWallpaperService.isActive(app)
+                app.scope.launch { app.updates.check() }
             }
         }
         lifecycle.addObserver(observer)

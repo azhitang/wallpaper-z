@@ -1,4 +1,4 @@
-# 壁纸z · 0.6.2
+# 壁纸z · 0.6.3
 
 本地桌面壁纸轮播 Android App，支持主题分组、普通照片和视频混播、顺序／随机／偏爱新图、定时／亮屏／解锁切换、1×1 图标小组件以及真实桌面淡入淡出。只处理主屏幕，不包含小米实况照片解析、在线图库或账号。
 
@@ -59,6 +59,8 @@ adb -s emulator-5554 install -r app/build/outputs/apk/androidTest/debug/app-debu
 adb -s emulator-5554 shell am instrument -w -r com.wallpaperz.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
+调试安装请使用单独的测试模拟器；已经迁移正式签名的安装不能覆盖回旧调试签名。更新测试中的在线源和系统安装器检查默认跳过，可在有网络、已安装正式版本且准备好对应签名 APK 时，显式传入 `verifyLiveSource=true`、`verifySignedInstaller=true`。安装器检查使用 App 外部文件目录中的 `test-update.apk` 作为测试素材，不会把测试 APK 打包进主应用。
+
 其他电脑需配置 Android SDK 的 `local.properties`、`JAVA_HOME`（JDK 17）和 `ANDROID_HOME`。首次构建需下载依赖，壁纸功能可离线使用，检查和下载更新需要网络。以上命令用于开发测试；正式发布执行 `python scripts/build_release.py`，使用固定正式签名并携带轮换证明。密钥保存在源码目录外，备份、换机和 GitHub Secrets 说明见 [固定签名说明](signing/README.md)。已迁移正式签名的安装请继续使用正式包升级。
 
 ## App 内更新与 GitHub 发布
@@ -68,12 +70,14 @@ adb -s emulator-5554 shell am instrument -w -r com.wallpaperz.app.test/androidx.
 - 每天首次打开 App 时自动检查；没有新版本或连接失败时不会弹窗打断使用。设置 → 版本更新可随时手动检查。
 - 发现新版本后显示说明与大小，点击下载。下载时请保持应用打开；中断后可重新下载。
 - 下载完成会检查大小、SHA-256、包名、版本号和固定正式签名。首次安装更新需允许“安装未知应用”，返回后由系统弹出安装确认，不能静默安装。
-- 首次需手动覆盖安装含更新模块的 0.6.2，之后新版本可从 App 内更新。直接覆盖安装，勿先卸载或清除数据。
+- 首次需手动覆盖安装含更新模块的 0.6.3，之后新版本可从 App 内更新。直接覆盖安装，勿先卸载或清除数据。
 - 更新清单固定地址：`https://github.com/azhitang/wallpaper-z/releases/latest/download/update.json`。APK 使用对应版本的固定下载地址，避免检查和下载之间指向不同版本。
 
 后续发布：递增 `app/build.gradle` 的 `versionCode` 和 `versionName`，同步设置页版本文字与 `RELEASE_NOTES.md`，提交后推送对应 `v<版本号>` 标签。GitHub Actions 会运行正式构建、单元测试、Lint、固定签名及发布，自动生成 APK 校验值和 `update.json`。也可在 Actions 中手动运行同一流程；已发布的版本不会覆盖。
 
 签名通过 `ANDROID_KEYSTORE_BASE64`、`ANDROID_SIGNING_CONFIG_BASE64` 两个 Actions Secrets 提供。明文私钥和密码不属于源码或 Release 附件，说明见 [固定签名说明](signing/README.md)。
+
+GitHub 下载需要设备本身能够访问 GitHub 及其附件域名。开发模拟器的联网验证使用开发机现有代理，App 不内置代理或访问令牌。验证结果见 [v0.6.2 验证记录](docs/verification-v0.6.2.md)。
 
 ## 实现
 

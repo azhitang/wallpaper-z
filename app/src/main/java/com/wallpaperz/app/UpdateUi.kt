@@ -58,7 +58,6 @@ import java.util.Locale
         if (context.packageManager.canRequestPackageInstalls()) install()
         else updates.installError("请先允许壁纸z安装更新，再点击安装")
     }
-    LaunchedEffect(updates) { updates.check() }
     if (!visible) return
     val release = when (val current = status) {
         is UpdateStatus.Available -> current.release

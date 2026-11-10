@@ -12,6 +12,7 @@ import androidx.test.uiautomator.Until
 import androidx.test.uiautomator.Direction
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
@@ -29,6 +30,11 @@ class UpdateIntegrationTest {
         override fun latest(): UpdateRelease { if (fail) throw IOException("offline"); return info }
         override fun openApk(release: UpdateRelease) = bytes.inputStream()
     })
+
+    @Test fun publishedGitHubSourceIsReachable() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("verifyLiveSource") == "true")
+        GitHubUpdateSource().latest().validate(android.os.Build.VERSION.SDK_INT)
+    }
 
     @Test fun newerVersionIsOfferedAndSameOrOlderIsNot() = runBlocking {
         val newer = controller()
@@ -64,6 +70,7 @@ class UpdateIntegrationTest {
     }
 
     @Test fun signedReleaseOpensSystemInstallerWithContentUri() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("verifySignedInstaller") == "true")
         val file = File(app.getExternalFilesDir(null), "test-update.apk")
         assertTrue("Push the signed release APK into the app's external files directory before this test", file.isFile)
         val archive = app.packageManager.getPackageArchiveInfo(file.path, PackageManager.GET_SIGNING_CERTIFICATES)!!
@@ -93,6 +100,7 @@ class UpdateIntegrationTest {
     }
 
     @Test fun manualCheckUsesPublishedGitHubManifest() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("verifyLiveSource") == "true")
         val device = UiDevice.getInstance(instrumentation)
         device.wakeUp()
         device.executeShellCommand("wm dismiss-keyguard")

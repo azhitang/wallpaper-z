@@ -282,7 +282,7 @@ import coil3.compose.AsyncImage
             Column(Modifier.fillMaxWidth().padding(top=2.dp,bottom=8.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                 AsyncImage(com.wallpaperz.app.R.drawable.icon_swirl,null,Modifier.size(46.dp))
                 Text("壁纸z",Modifier.padding(top=8.dp),fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("0.6.2 · 让桌面随心而变",Modifier.padding(top=3.dp),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(.7f))
+                Text("0.6.3 · 让桌面随心而变",Modifier.padding(top=3.dp),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(.7f))
             }
         }
     }
