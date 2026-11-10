@@ -77,7 +77,7 @@ adb -s emulator-5554 shell am instrument -w -r com.wallpaperz.app.test/androidx.
 
 签名通过 `ANDROID_KEYSTORE_BASE64`、`ANDROID_SIGNING_CONFIG_BASE64` 两个 Actions Secrets 提供。明文私钥和密码不属于源码或 Release 附件，说明见 [固定签名说明](signing/README.md)。
 
-GitHub 下载需要设备本身能够访问 GitHub 及其附件域名。开发模拟器的联网验证使用开发机现有代理，App 不内置代理或访问令牌。验证结果见 [v0.6.2 验证记录](docs/verification-v0.6.2.md)。
+GitHub 下载需要设备本身能够访问 GitHub 及其附件域名。开发模拟器的联网验证使用开发机现有代理，App 不内置代理或访问令牌。验证结果见 [v0.6.3 验证记录](docs/verification-v0.6.3.md)。
 
 ## 实现
 
