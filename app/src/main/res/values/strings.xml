@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">壁纸z</string>
+    <string name="wallpaper_description">照片与视频混播，柔和淡入淡出；视频静音循环，离开桌面暂停。</string>
+    <string name="widget_description">1×1 图标，点击切换下一张桌面壁纸</string>
+</resources>
