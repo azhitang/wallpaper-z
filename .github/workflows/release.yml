@@ -12,7 +12,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      WALLPAPERZ_SIGNING_DIR: ${{ runner.temp }}/wallpaperz-signing
+      WALLPAPERZ_SIGNING_DIR: /tmp/wallpaperz-signing
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
