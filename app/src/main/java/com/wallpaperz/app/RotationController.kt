@@ -100,6 +100,7 @@ class RotationController(private val app: WallpaperZApp) {
 
     suspend fun mode(mode: PlayMode) = mutate { state -> state.updateGroup { it.copy(mode = mode) } }
     suspend fun trigger(trigger: Trigger) = mutate { state -> state.updateGroup { it.copy(trigger = trigger) } }
+    suspend fun videoTiming(timing: VideoTiming) = mutate { state -> state.updateGroup { it.copy(videoTiming = timing) } }
     suspend fun interval(seconds: Int) = mutate {
         require(seconds in INTERVALS)
         it.updateGroup { group -> group.copy(intervalSeconds = seconds) }

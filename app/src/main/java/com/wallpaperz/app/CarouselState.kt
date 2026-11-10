@@ -9,6 +9,7 @@ import kotlin.random.Random
     INTERVAL("定时"), SCREEN_ON("每次亮屏"), UNLOCK("每次解锁")
 }
 @Serializable enum class MediaKind(val title: String) { PHOTO("照片"), VIDEO("视频") }
+@Serializable enum class VideoTiming(val title: String) { FINISH("播完切换"), INTERVAL("跟随间隔") }
 @Serializable data class WallpaperItem(val id: String, val name: String, val kind: MediaKind = MediaKind.PHOTO,
                                      val durationMs: Long = 0, val importedAt: Long = 0)
 @Serializable data class WallpaperGroup(
@@ -18,9 +19,12 @@ import kotlin.random.Random
     val mode: PlayMode = PlayMode.ORDERED,
     val trigger: Trigger = Trigger.UNLOCK,
     val intervalSeconds: Int = 60,
+    val videoTiming: VideoTiming = VideoTiming.FINISH,
     val currentId: String? = null,
     val lastChangedAt: Long = 0
-)
+) {
+    val switchesOnVideoEnd get() = trigger == Trigger.INTERVAL && videoTiming == VideoTiming.FINISH
+}
 
 @Serializable data class CarouselState(
     val groups: List<WallpaperGroup> = listOf(WallpaperGroup()),
@@ -38,6 +42,7 @@ import kotlin.random.Random
     val mode get() = group.mode
     val trigger get() = group.trigger
     val intervalSeconds get() = group.intervalSeconds
+    val videoTiming get() = group.videoTiming
     val currentId get() = group.currentId
     val lastChangedAt get() = group.lastChangedAt
     fun updateGroup(id: String = activeGroupId, transform: (WallpaperGroup) -> WallpaperGroup) =

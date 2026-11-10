@@ -614,6 +614,77 @@ class WallpaperIntegrationTest {
         assertNull(app.repository.read().lastError)
     }
 
+    @Test fun shortVideoLoopsUntilTheFullMinuteInterval() = runBlocking {
+        val photos = importFixtures()
+        val movie = importMovie()
+        app.controller.trigger(Trigger.INTERVAL)
+        app.controller.interval(60)
+        app.controller.videoTiming(VideoTiming.INTERVAL)
+        app.controller.next(selectedId = movie.id, enableAutomatic = true)
+        val generation = app.repository.read().lastChangedAt
+        eventually { app.desktopPlayback.value.let { it.itemId == movie.id && it.ready } }
+        delay(8000)
+        assertEquals(movie.id, app.repository.read().currentId)
+        assertEquals(generation, app.repository.read().lastChangedAt)
+        assertFalse(app.desktopPlayback.value.ended)
+        eventually(65_000) { app.repository.read().currentId == photos[0].id }
+        assertTrue(app.repository.read().lastChangedAt - generation >= 60_000)
+        assertNull(app.repository.read().lastError)
+    }
+
+    @Test fun intervalDeadlineCutsVideoBeforeItsEnd() = runBlocking {
+        val photos = importFixtures()
+        val movie = importMovie("interval-motion.mp4")
+        assertTrue(movie.durationMs in 69_000..71_000)
+        app.controller.trigger(Trigger.INTERVAL)
+        app.controller.interval(60)
+        app.controller.videoTiming(VideoTiming.INTERVAL)
+        app.controller.next(selectedId = movie.id, enableAutomatic = true)
+        val generation = app.repository.read().lastChangedAt
+        eventually { app.desktopPlayback.value.let { it.itemId == movie.id && it.ready } }
+        eventually(65_000) { app.repository.read().currentId == photos[0].id }
+        val elapsed = app.repository.read().lastChangedAt - generation
+        assertTrue("A 70-second clip must be cut at the one-minute interval: $elapsed", elapsed in 60_000..65_000)
+        assertNull(app.repository.read().lastError)
+    }
+
+    @Test fun videoTimingChangesApplyToThePlayingVideoWithoutResettingRound() = runBlocking {
+        val photos = importFixtures()
+        val movie = importMovie("long-motion.mp4")
+        app.controller.trigger(Trigger.INTERVAL)
+        app.controller.next(selectedId = movie.id, enableAutomatic = true)
+        eventually { app.desktopPlayback.value.let { it.itemId == movie.id && it.ready } }
+        val original = app.repository.read()
+        app.controller.videoTiming(VideoTiming.INTERVAL)
+        assertEquals(original.lastChangedAt, app.repository.read().lastChangedAt)
+        assertEquals(original.roundPlayedIds, app.repository.read().roundPlayedIds)
+        delay(8500)
+        assertEquals(movie.id, app.repository.read().currentId)
+        assertFalse(app.desktopPlayback.value.ended)
+        app.controller.videoTiming(VideoTiming.FINISH)
+        assertEquals(original.lastChangedAt, app.repository.read().lastChangedAt)
+        eventually(10_000) { app.repository.read().currentId == photos[0].id }
+        assertNull(app.repository.read().lastError)
+    }
+
+    @Test fun videoTimingControlsKeepIndependentThemeSettings() = runBlocking {
+        importFixtures()
+        app.controller.trigger(Trigger.INTERVAL)
+        device.wait(Until.findObject(By.res("settings_tab")), 10_000)!!.click()
+        device.wait(Until.findObject(By.text("跟随间隔")), 10_000)!!.click()
+        eventually { app.repository.read().videoTiming == VideoTiming.INTERVAL }
+        app.controller.createGroup("视频时长测试")
+        assertEquals(VideoTiming.FINISH, app.repository.read().videoTiming)
+        app.controller.trigger(Trigger.INTERVAL)
+        app.controller.selectGroup("default")
+        eventually { app.repository.read().videoTiming == VideoTiming.INTERVAL }
+        assertTrue(device.wait(Until.hasObject(By.text("轮播间隔")), 8000))
+        device.waitForIdle()
+        val frame = instrumentation.uiAutomation.takeScreenshot()
+        File(app.getExternalFilesDir(null), "v064-video-settings.png").outputStream().use { frame.compress(Bitmap.CompressFormat.PNG,100,it) }
+        frame.recycle()
+    }
+
     @Test fun longVideoSwitchesAtCompletionInsteadOfWaitingOneMinute() = runBlocking {
         val photos = importFixtures()
         val movie = importMovie("long-motion.mp4")

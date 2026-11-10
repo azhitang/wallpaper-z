@@ -49,7 +49,7 @@ class RotationService : Service() {
     }
 
     private data class Schedule(val automatic: Boolean, val trigger: Trigger,
-                                val seconds: Int, val lastChangedAt: Long, val themeName: String,
+                                val seconds: Int, val videoTiming: VideoTiming, val lastChangedAt: Long, val themeName: String,
                                 val item: WallpaperItem?)
 
     override fun onCreate() {
@@ -65,7 +65,7 @@ class RotationService : Service() {
         scope.launch {
             val schedule = app.repository.changes.map {
                 val group = it.playbackGroup
-                Schedule(it.automatic, group.trigger, group.intervalSeconds, group.lastChangedAt, group.name,
+                Schedule(it.automatic, group.trigger, group.intervalSeconds, group.videoTiming, group.lastChangedAt, group.name,
                     group.photos.firstOrNull { photo -> photo.id == group.currentId })
             }.distinctUntilChanged()
             combine(schedule, app.desktopPlayback) { settings, playback -> settings to playback }
@@ -75,9 +75,9 @@ class RotationService : Service() {
                     stopSelf()
                     return@collectLatest
                 }
-                getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification(settings.trigger, settings.seconds, settings.themeName))
+                getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification(settings.trigger, settings.seconds, settings.themeName, settings.videoTiming))
                 if (settings.trigger != Trigger.INTERVAL || settings.item == null) return@collectLatest
-                if (settings.item.kind == MediaKind.VIDEO) {
+                if (settings.item.kind == MediaKind.VIDEO && settings.videoTiming == VideoTiming.FINISH) {
                     if (playback.itemId != settings.item.id || playback.generation != settings.lastChangedAt || !playback.ended)
                         return@collectLatest
                 } else {
@@ -95,20 +95,22 @@ class RotationService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val state = app.repository.state.value
-        startForeground(NOTIFICATION, notification(state?.playbackGroup?.trigger ?: Trigger.UNLOCK, state?.playbackGroup?.intervalSeconds ?: 60, state?.playbackGroup?.name ?: "默认主题"),
+        startForeground(NOTIFICATION, notification(state?.playbackGroup?.trigger ?: Trigger.UNLOCK, state?.playbackGroup?.intervalSeconds ?: 60, state?.playbackGroup?.name ?: "默认主题", state?.playbackGroup?.videoTiming ?: VideoTiming.FINISH),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         if (intent?.action == PAUSE) app.scope.launch { app.controller.pause() }
         return START_STICKY
     }
 
-    private fun notification(trigger: Trigger, seconds: Int, themeName: String): Notification {
+    private fun notification(trigger: Trigger, seconds: Int, themeName: String, videoTiming: VideoTiming): Notification {
         val open = PendingIntent.getActivity(this, 10, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val next = PendingIntent.getBroadcast(this, 11,
             Intent(this, NextWidget::class.java).setAction(NextWidget.NEXT).addFlags(Intent.FLAG_RECEIVER_FOREGROUND),
             PendingIntent.FLAG_IMMUTABLE)
         val pause = PendingIntent.getService(this, 12,
             Intent(this, RotationService::class.java).setAction(PAUSE), PendingIntent.FLAG_IMMUTABLE)
-        val text = if (trigger == Trigger.INTERVAL) "图片 ${intervalLabel(seconds)} · 视频播完切换" else "${trigger.title}切换"
+        val text = if (trigger == Trigger.INTERVAL) {
+            if (videoTiming == VideoTiming.FINISH) "图片 ${intervalLabel(seconds)} · 视频播完切换" else "照片与视频每 ${intervalLabel(seconds)}切换"
+        } else "${trigger.title}切换"
         return Notification.Builder(this, CHANNEL).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("壁纸z · $themeName").setContentText(text).setContentIntent(open)
             .setOngoing(true).setOnlyAlertOnce(true)

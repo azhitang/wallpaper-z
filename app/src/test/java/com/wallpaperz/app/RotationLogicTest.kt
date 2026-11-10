@@ -186,4 +186,30 @@ class RotationLogicTest {
         assertEquals(Trigger.UNLOCK, state.trigger)
         assertEquals(60, state.intervalSeconds)
     }
+
+    @Test fun existingThemesDefaultToFinishingVideosWithoutLosingProgress() {
+        val state = decodeCarouselState("""{"groups":[{"photos":[{"id":"a","name":"A","kind":"VIDEO"}],"trigger":"INTERVAL","currentId":"a","lastChangedAt":123}],"playingGroupId":"default","roundPlayedIds":["a"]}""")
+        assertEquals(VideoTiming.FINISH, state.videoTiming)
+        assertTrue(state.playbackGroup.switchesOnVideoEnd)
+        assertEquals(123L, state.lastChangedAt)
+        assertEquals(listOf("a"), state.roundPlayedIds)
+    }
+
+    @Test fun videoTimingIsSavedIndependentlyForEachTheme() {
+        val first = WallpaperGroup(trigger = Trigger.INTERVAL, videoTiming = VideoTiming.INTERVAL, currentId = "a", lastChangedAt = 123)
+        val second = WallpaperGroup(id = "b", trigger = Trigger.INTERVAL)
+        val state = CarouselState(groups = listOf(first, second), activeGroupId = "b", playingGroupId = "default", roundPlayedIds = listOf("a"))
+        val restored = decodeCarouselState(Json.encodeToString(state))
+        assertEquals(state, restored)
+        assertEquals(VideoTiming.FINISH, restored.videoTiming)
+        assertFalse(restored.playbackGroup.switchesOnVideoEnd)
+        assertTrue(restored.group.switchesOnVideoEnd)
+        assertEquals(listOf("a"), restored.roundPlayedIds)
+    }
+
+    @Test fun screenEventsKeepControlRegardlessOfVideoTiming() {
+        for (trigger in listOf(Trigger.SCREEN_ON, Trigger.UNLOCK)) for (timing in VideoTiming.entries) {
+            assertFalse(WallpaperGroup(trigger = trigger, videoTiming = timing).switchesOnVideoEnd)
+        }
+    }
 }

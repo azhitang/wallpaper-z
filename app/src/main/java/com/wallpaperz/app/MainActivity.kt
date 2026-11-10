@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
                                 notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                             else perform { app.controller.next(enableAutomatic=true) }
                         },onMode={ perform { app.controller.mode(it) } },onTrigger={ perform { app.controller.trigger(it) } },
-                        onInterval={ perform { app.controller.interval(it) } },onWidget={
+                        onInterval={ perform { app.controller.interval(it) } },onVideoTiming={ perform { app.controller.videoTiming(it) } },onWidget={
                             val manager=context.getSystemService(AppWidgetManager::class.java)
                             if(manager.isRequestPinAppWidgetSupported) manager.requestPinAppWidget(ComponentName(context,NextWidget::class.java),null,null)
                             else perform { app.controller.message("请长按桌面，在小组件中添加壁纸z") }

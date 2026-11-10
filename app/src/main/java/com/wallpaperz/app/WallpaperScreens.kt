@@ -215,7 +215,7 @@ import coil3.compose.AsyncImage
 
 @Composable fun SettingsPage(state: CarouselState, switching: Boolean, notificationsAllowed: Boolean,
     liveActive: Boolean, onActivate: () -> Unit, onAutomatic: (Boolean) -> Unit, onMode: (PlayMode) -> Unit,
-    onTrigger: (Trigger) -> Unit, onInterval: (Int) -> Unit, onWidget: () -> Unit) {
+    onTrigger: (Trigger) -> Unit, onInterval: (Int) -> Unit, onVideoTiming: (VideoTiming) -> Unit, onWidget: () -> Unit) {
     val context=LocalContext.current
     var intervalMenu by remember { mutableStateOf(false) }
     LazyColumn(Modifier.fillMaxSize().testTag("settings_list"),contentPadding=PaddingValues(start=20.dp,end=20.dp,bottom=116.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {
@@ -252,7 +252,13 @@ import coil3.compose.AsyncImage
                 }
                 if(state.trigger==Trigger.INTERVAL) {
                     ZDivider()
-                    ZSettingsRow("图片停留",subtitle=null,symbol=ZSymbol.CLOCK,color=Color(0xFFFF9F0A),onClick={ intervalMenu=true },value=intervalLabel(state.intervalSeconds),
+                    Column(Modifier.padding(18.dp).testTag("video_timing")) {
+                        Text("视频播放时长",fontSize=16.sp,fontWeight=FontWeight.Medium)
+                        Spacer(Modifier.height(12.dp))
+                        ZSegmented(VideoTiming.entries.map { it.title },state.videoTiming.ordinal,{ onVideoTiming(VideoTiming.entries[it]) })
+                    }
+                    ZDivider()
+                    ZSettingsRow(if(state.videoTiming==VideoTiming.INTERVAL) "轮播间隔" else "图片停留",subtitle=null,symbol=ZSymbol.CLOCK,color=Color(0xFFFF9F0A),onClick={ intervalMenu=true },value=intervalLabel(state.intervalSeconds),
                         modifier=Modifier.testTag("interval_picker"))
                 }
             }
@@ -260,7 +266,10 @@ import coil3.compose.AsyncImage
                 PlayMode.ORDERED -> "按素材排列顺序播放；已播完的主题等待其他主题。"
                 PlayMode.SHUFFLE -> "主题内随机抽取，全部勾选壁纸播完前不重复。"
                 PlayMode.FAVOR_NEW -> "新导入素材更容易排在本轮前面，最高 4 倍权重、7 天内回落；所有壁纸播完前不重复。"
-            } + if(state.trigger==Trigger.INTERVAL) "图片按所选时间切换，视频静音播完切换；打开其他应用后继续轮播。" else "按所选屏幕事件切换，不受桌面可见性限制。")
+            } + if(state.trigger==Trigger.INTERVAL) {
+                if(state.videoTiming==VideoTiming.FINISH) "图片按间隔切换，视频静音播完切换；打开其他应用后继续轮播。"
+                else "照片与视频均按间隔切换；短视频静音循环，长视频到时切换。"
+            } else "视频静音循环，按所选屏幕事件切换；选择定时后可设置视频播放时长。")
         }
         item {
             ZSectionLabel("桌面与系统")
@@ -282,11 +291,12 @@ import coil3.compose.AsyncImage
             Column(Modifier.fillMaxWidth().padding(top=2.dp,bottom=8.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                 AsyncImage(com.wallpaperz.app.R.drawable.icon_swirl,null,Modifier.size(46.dp))
                 Text("壁纸z",Modifier.padding(top=8.dp),fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("0.6.3 · 让桌面随心而变",Modifier.padding(top=3.dp),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(.7f))
+                Text("0.6.4 · 让桌面随心而变",Modifier.padding(top=3.dp),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(.7f))
             }
         }
     }
-    if(intervalMenu) ZSheet("图片停留时间",{ intervalMenu=false },"视频静音播放一遍后切换，不受桌面可见性限制") {
+    if(intervalMenu) ZSheet(if(state.videoTiming==VideoTiming.INTERVAL) "轮播间隔" else "图片停留时间",{ intervalMenu=false },
+        if(state.videoTiming==VideoTiming.INTERVAL) "照片与视频均按此间隔切换，短视频静音循环" else "视频静音播放一遍后切换，不受桌面可见性限制") {
         LazyColumn(Modifier.padding(horizontal=20.dp).heightIn(max=440.dp).clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.surface)) {
             items(INTERVALS) { seconds ->
                 Row(Modifier.fillMaxWidth().heightIn(min=50.dp).clickable { intervalMenu=false; onInterval(seconds) }

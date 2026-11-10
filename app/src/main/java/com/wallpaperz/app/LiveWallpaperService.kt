@@ -58,7 +58,7 @@ class LiveWallpaperService : WallpaperService() {
                     val group = state.playbackGroup
                     val item = if (isPreview && preview != null) preview else
                         group.photos.find { it.id == group.currentId } ?: group.photos.firstOrNull()
-                    Triple(item, group.lastChangedAt, !isPreview && state.automatic && group.trigger == Trigger.INTERVAL)
+                    Triple(item, group.lastChangedAt, !isPreview && state.automatic && group.switchesOnVideoEnd)
                 }.collect { (item, generation, finishAtEnd) ->
                     if (!isPreview && wallpaperApp.desktopEngine === this@WallpaperEngine) wallpaperApp.desktopPlayback.update {
                         if (it.itemId == item?.id && it.generation == generation) it else
